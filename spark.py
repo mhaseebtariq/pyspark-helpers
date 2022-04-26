@@ -46,7 +46,7 @@ class JoinStatement:
     def execute(self, left_data, right_data, recursive=False):
         if self.operator_type == self.type_comparison:
             return self.operation(
-                left_data[f"{self.left_alias}{self.left}"], right_data[f"{self.right_alias}{self.right}"]
+                left_data[self.get_left_column(self.left)], right_data[self.get_right_column(self.right)]
             )
         elif self.operator_type == self.type_bitwise:
             if recursive:
@@ -57,6 +57,14 @@ class JoinStatement:
             )
         else:
             raise NotImplementedError(f"Operation type `{self.operator_type}` not implemented")
+
+    @classmethod
+    def get_left_column(cls, column):
+        return f"{cls.left_alias}.{column}"
+
+    @classmethod
+    def get_right_column(cls, column):
+        return f"{cls.right_alias}.{column}"
 
     @staticmethod
     def _validate_operator(operation, mapping, type_):
@@ -150,9 +158,10 @@ def join(left, right, statement, how="left", duplicate_keep="left"):
     right = right.alias(JoinStatement.right_alias)
     final_columns = sorted(
         # Common columns
-        [f"{JoinStatement.left_alias}.{x}" for x in left_duplicate_keep] +
-        [f"{JoinStatement.right_alias}.{x}" for x in right_duplicate_keep] +
+        [f"{JoinStatement.get_left_column(x)}" for x in left_duplicate_keep] +
+        [f"{JoinStatement.get_right_column(x)}" for x in right_duplicate_keep] +
         # Non-common columns
-        [f"{JoinStatement.left_alias}.{x}" for x in set(left_columns).symmetric_difference(right_columns)]
+        [f"{JoinStatement.get_left_column(x)}" for x in set(left_columns).difference(right_columns)] +
+        [f"{JoinStatement.get_right_column(x)}" for x in set(right_columns).difference(left_columns)]
     )
     return left.join(right, on=statement.execute(left, right), how=how).select(*final_columns)
