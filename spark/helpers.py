@@ -8,21 +8,21 @@ from .join import JoinValidator, JoinStatement
 
 def join(
         left: DataFrame, right: DataFrame, statement: JoinStatement,
-        how: str = "inner", when_same_columns: Union[str, list] = None
+        how: str = "inner", overwrite_strategy: Union[str, list] = None
 ) -> DataFrame:
     """
     Joins two Spark dataframes in a foolproof manner
 
     [See JoinValidator and JoinStatement for details]
     """
-    params = JoinValidator(left, right, statement, when_same_columns)
+    params = JoinValidator(left, right, statement, overwrite_strategy)
 
     left = params.left.alias(JoinStatement.left_alias)
     right = params.right.alias(JoinStatement.right_alias)
     final_columns = (
         # Common columns
-        [f"{JoinStatement.get_left_column(x)}" for x in params.left_when_same_columns] +
-        [f"{JoinStatement.get_right_column(x)}" for x in params.right_when_same_columns] +
+        [f"{JoinStatement.get_left_column(x)}" for x in params.left_overwrite_columns] +
+        [f"{JoinStatement.get_right_column(x)}" for x in params.right_overwrite_columns] +
         # Non-common columns
         [f"{JoinStatement.get_left_column(x)}" for x in set(params.left_columns).difference(params.right_columns)] +
         [f"{JoinStatement.get_right_column(x)}" for x in set(params.right_columns).difference(params.left_columns)]
