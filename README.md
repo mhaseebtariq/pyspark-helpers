@@ -9,8 +9,7 @@ except ImportError:
     ! pip install pyspark==3.2.1
 
 from pyspark import SparkConf
-from pyspark.sql import SparkSession
-from pyspark.sql import types as st
+from pyspark.sql import SparkSession, types as st
 
 import spark.helpers as sh
 ```
