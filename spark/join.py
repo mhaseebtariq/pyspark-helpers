@@ -1,9 +1,8 @@
 import operator
 from copy import deepcopy
-from typing import Union, Generator, Optional, MutableMapping
+from typing import Union, Optional
 
 
-import pyspark.sql.functions as sf
 from pyspark.sql.dataframe import DataFrame
 
 
