@@ -42,6 +42,8 @@ def group_iterator(dataframe: DataFrame, group: str) -> Generator[tuple, None, N
     Returns:
         A generator: [(group_name, group_dataframe), ...]
     """
+    if type(group) is not str:
+        raise NotImplementedError(f"Only single column groups are supported: {group}")
     groups = [x[0] for x in dataframe.select(group).distinct().sort(group).collect()]
     for x in groups:
         yield x, dataframe.filter(sf.col(group) == x)
