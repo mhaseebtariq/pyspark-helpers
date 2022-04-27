@@ -1,5 +1,5 @@
 # Pyspark Helper Functions
-### [For less verbose and fool-proof operations]
+### [For less verbose and foolproof operations]
 
 
 ```python
