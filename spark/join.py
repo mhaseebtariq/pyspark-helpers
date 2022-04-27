@@ -1,4 +1,5 @@
 import operator
+from copy import deepcopy
 from typing import Union, Generator, Optional, MutableMapping
 
 
@@ -39,7 +40,7 @@ class JoinStatement:
 
     def __init__(self, left: JoinStatementOrString, right: JoinStatementOrString = None, operation: str = "eq"):
         if right is None:
-            right = str(left)
+            right = deepcopy(left)
         self_types = [left.__class__ == self.__class__, right.__class__ == self.__class__]
         if any(self_types):
             if not all(self_types):
