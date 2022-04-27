@@ -142,13 +142,13 @@ class JoinValidator:
         left (Spark DataFrame): The left dataframe
         right (Spark DataFrame): The right dataframe
         statement (JoinStatement): The join statement as a JoinStatement object
-        when_same_columns (str_or_list): The selection strategy to adopt when there are overlapping columns:
+        overwrite_strategy (str_or_list): The selection strategy to adopt when there are overlapping columns:
             * "left": Use all the intersecting columns from the left dataframe
             * "right": Use all the intersecting columns from the right dataframe
             * [["column_x_in_left", "column_y_in_left"], ["column_z_in_left"]]: Provide column names for both
     """
     def __init__(
-            self, left: DataFrame, right: DataFrame, statement: JoinStatement, when_same_columns: Union[str, list]
+            self, left: DataFrame, right: DataFrame, statement: JoinStatement, overwrite_strategy: Union[str, list]
     ):
         if not isinstance(statement, JoinStatement):
             raise ValueError(f"Argument `statement` ({statement.__class__}) must be an instance of JoinStatement")
@@ -157,8 +157,8 @@ class JoinValidator:
         self.right = self._validate_dataframe(right, "right")
         self.left_columns = [x.name for x in self.left.schema]
         self.right_columns = [x.name for x in self.right.schema]
-        self.left_when_same_columns, self.right_when_same_columns = self._validate_when_same_columns_argument(
-            when_same_columns, self.left_columns, self.right_columns
+        self.left_overwrite_columns, self.right_overwrite_columns = self._validate_overwrite_strategy_argument(
+            overwrite_strategy, self.left_columns, self.right_columns
         )
 
     @staticmethod
@@ -189,51 +189,53 @@ class JoinValidator:
         return left, right
 
     @classmethod
-    def _validate_when_same_columns_argument(cls, when_same_columns, left_columns, right_columns):
+    def _validate_overwrite_strategy_argument(cls, overwrite_strategy, left_columns, right_columns):
         error = (
-            f"\nThe argument `when_same_columns` ({when_same_columns}) should be either:\n"
+            f"\nThe argument `overwrite_strategy` ({overwrite_strategy}) should be either:\n"
             "* A string with value 'left' or 'right'\n"
             "* A list of exactly 2 lists containing only strings: e.g. [['column_w', 'column_x'], ['column_y']]"
         )
         common_columns = sorted(set(left_columns).intersection(right_columns))
         if common_columns:
-            if not when_same_columns:
+            if not overwrite_strategy:
                 raise ValueError(
                     f"\n\nOverlapping columns found in the dataframes: {common_columns}"
-                    "\nPlease provide the `when_same_columns` argument therefore, to select a selection strategy:"
+                    "\nPlease provide the `overwrite_strategy` argument therefore, to select a selection strategy:"
                     '\n\t* "left": Use all the intersecting columns from the left dataframe'
                     '\n\t* "right": Use all the intersecting columns from the right dataframe'
                     '\n\t* [["x_in_left", "y_in_left"], ["z_in_right"]]: Provide column names for both\n'
                 )
         else:
-            when_same_columns = "left"
-        check_if_left_or_right = cls._check_if_left_or_right(when_same_columns, error)
+            overwrite_strategy = "left"
+        check_if_left_or_right = cls._check_if_left_or_right(overwrite_strategy, error)
         if check_if_left_or_right:
             if check_if_left_or_right == "left":
-                left_when_same_columns = list(common_columns)
-                right_when_same_columns = []
+                left_overwrite_columns = list(common_columns)
+                right_overwrite_columns = []
             else:
-                left_when_same_columns = []
-                right_when_same_columns = list(common_columns)
+                left_overwrite_columns = []
+                right_overwrite_columns = list(common_columns)
         else:
-            left_when_same_columns, right_when_same_columns = cls._check_if_list_has_two_items(when_same_columns, error)
+            left_overwrite_columns, right_overwrite_columns = cls._check_if_list_has_two_items(
+                overwrite_strategy, error
+            )
 
-        left_when_same_columns = cls._check_if_list_items_are_strings(left_when_same_columns, error)
-        right_when_same_columns = cls._check_if_list_items_are_strings(right_when_same_columns, error)
-        common_keep = sorted(set(left_when_same_columns).intersection(right_when_same_columns))
+        left_overwrite_columns = cls._check_if_list_items_are_strings(left_overwrite_columns, error)
+        right_overwrite_columns = cls._check_if_list_items_are_strings(right_overwrite_columns, error)
+        common_keep = sorted(set(left_overwrite_columns).intersection(right_overwrite_columns))
         if common_keep:
-            raise ValueError(f"Some of the `when_same_columns` columns defined for both dataframes: {common_keep}")
+            raise ValueError(f"Some of the `overwrite_strategy` columns defined for both dataframes: {common_keep}")
 
         missing_or_extra = sorted(
-            set(common_columns).symmetric_difference(left_when_same_columns + right_when_same_columns)
+            set(common_columns).symmetric_difference(left_overwrite_columns + right_overwrite_columns)
         )
         if missing_or_extra:
             raise ValueError(
-                f"Some of the provided `when_same_columns` ({when_same_columns}) columns are "
+                f"Some of the provided `overwrite_strategy` ({overwrite_strategy}) columns are "
                 f"either extra or missing in the subset of the common columns: {common_columns}"
             )
 
-        return sorted(set(left_when_same_columns)), sorted(set(right_when_same_columns))
+        return sorted(set(left_overwrite_columns)), sorted(set(right_overwrite_columns))
 
     @staticmethod
     def _validate_dataframe(dataframe, which):
