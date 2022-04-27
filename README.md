@@ -13,7 +13,6 @@ from pyspark.sql import SparkSession
 from pyspark.sql import types as st
 
 import spark.helpers as sh
-from spark.join import JoinValidator, JoinStatement
 ```
 
 
@@ -38,14 +37,14 @@ _ = dataframe_1.show(), dataframe_2.show()
     | x1| x2| x3| x4|   x5|
     +---+---+---+---+-----+
     |  A|  J|734|499|595.0|
-    |  B|  I|357|202|525.0|
+    |  B|  J|357|202|525.0|
     |  C|  H|864|568|433.5|
-    |  D|  G|530|703|112.3|
-    |  E|  F| 61|521|906.0|
-    |  F|  E|482|496| 13.0|
-    |  G|  D|350|279|941.0|
+    |  D|  J|530|703|112.3|
+    |  E|  H| 61|521|906.0|
+    |  F|  H|482|496| 13.0|
+    |  G|  A|350|279|941.0|
     |  H|  C|171|267|423.0|
-    |  I|  B|755|133|600.0|
+    |  I|  C|755|133|600.0|
     |  J|  A|228|765|  7.0|
     +---+---+---+---+-----+
     
@@ -70,20 +69,14 @@ _ = dataframe_1.show(), dataframe_2.show()
 
 
 ```python
-for group, data in sh.group_iterator(dataframe_1, "x1"):
+for group, data in sh.group_iterator(dataframe_1, "x2"):
     print(group, data.toPandas().shape[0])
 ```
 
-    A 1
-    B 1
-    C 1
-    D 1
-    E 1
-    F 1
-    G 1
-    H 1
-    I 1
-    J 1
+    A 2
+    C 2
+    H 3
+    J 3
 
 
 ## Bulk-change schema
@@ -115,7 +108,7 @@ assert after == check
 
 
 ```python
-joined = sh.join(dataframe_1, dataframe_2, JoinStatement("x1", "x1"))
+joined = sh.join(dataframe_1, dataframe_2, sh.JoinStatement("x1"))
 joined.toPandas()
 ```
 
@@ -123,7 +116,19 @@ joined.toPandas()
 
 
 <div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
 
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
 <table border="1" class="dataframe">
   <thead>
     <tr style="text-align: right;">
@@ -151,7 +156,7 @@ joined.toPandas()
     <tr>
       <th>1</th>
       <td>B</td>
-      <td>I</td>
+      <td>J</td>
       <td>357</td>
       <td>202</td>
       <td>525.0</td>
@@ -171,7 +176,7 @@ joined.toPandas()
     <tr>
       <th>3</th>
       <td>D</td>
-      <td>G</td>
+      <td>J</td>
       <td>530</td>
       <td>703</td>
       <td>112.3</td>
@@ -181,7 +186,7 @@ joined.toPandas()
     <tr>
       <th>4</th>
       <td>E</td>
-      <td>F</td>
+      <td>H</td>
       <td>61</td>
       <td>521</td>
       <td>906.0</td>
@@ -191,7 +196,7 @@ joined.toPandas()
     <tr>
       <th>5</th>
       <td>F</td>
-      <td>E</td>
+      <td>H</td>
       <td>482</td>
       <td>496</td>
       <td>13.0</td>
@@ -208,7 +213,7 @@ joined.toPandas()
 
 
 ```python
-joined = sh.join(dataframe_1, dataframe_2, JoinStatement("x1", "x1"), duplicate_keep="right")
+joined = sh.join(dataframe_1, dataframe_2, sh.JoinStatement("x1"), duplicate_keep="right")
 joined.toPandas()
 ```
 
@@ -216,7 +221,19 @@ joined.toPandas()
 
 
 <div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
 
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
 <table border="1" class="dataframe">
   <thead>
     <tr style="text-align: right;">
@@ -244,7 +261,7 @@ joined.toPandas()
     <tr>
       <th>1</th>
       <td>B</td>
-      <td>I</td>
+      <td>J</td>
       <td>P</td>
       <td>692</td>
       <td>525.0</td>
@@ -264,7 +281,7 @@ joined.toPandas()
     <tr>
       <th>3</th>
       <td>D</td>
-      <td>G</td>
+      <td>J</td>
       <td>R</td>
       <td>50</td>
       <td>112.3</td>
@@ -274,7 +291,7 @@ joined.toPandas()
     <tr>
       <th>4</th>
       <td>E</td>
-      <td>F</td>
+      <td>H</td>
       <td>S</td>
       <td>824</td>
       <td>906.0</td>
@@ -284,7 +301,7 @@ joined.toPandas()
     <tr>
       <th>5</th>
       <td>F</td>
-      <td>E</td>
+      <td>H</td>
       <td>T</td>
       <td>69</td>
       <td>13.0</td>
@@ -302,7 +319,7 @@ joined.toPandas()
 
 ```python
 joined = sh.join(
-    dataframe_1, dataframe_2, JoinStatement("x1", "x1"), 
+    dataframe_1, dataframe_2, sh.JoinStatement("x1"), 
     duplicate_keep=[["x1", "x3"], ["x4"]]
 )
 joined.toPandas()
@@ -312,7 +329,19 @@ joined.toPandas()
 
 
 <div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
 
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
 <table border="1" class="dataframe">
   <thead>
     <tr style="text-align: right;">
@@ -340,7 +369,7 @@ joined.toPandas()
     <tr>
       <th>1</th>
       <td>B</td>
-      <td>I</td>
+      <td>J</td>
       <td>357</td>
       <td>692</td>
       <td>525.0</td>
@@ -360,7 +389,7 @@ joined.toPandas()
     <tr>
       <th>3</th>
       <td>D</td>
-      <td>G</td>
+      <td>J</td>
       <td>530</td>
       <td>50</td>
       <td>112.3</td>
@@ -370,7 +399,7 @@ joined.toPandas()
     <tr>
       <th>4</th>
       <td>E</td>
-      <td>F</td>
+      <td>H</td>
       <td>61</td>
       <td>824</td>
       <td>906.0</td>
@@ -380,7 +409,7 @@ joined.toPandas()
     <tr>
       <th>5</th>
       <td>F</td>
-      <td>E</td>
+      <td>H</td>
       <td>482</td>
       <td>69</td>
       <td>13.0</td>
@@ -397,9 +426,9 @@ joined.toPandas()
 
 
 ```python
-x1_x1 = JoinStatement("x1", "x1")
-x1_x3 = JoinStatement("x1", "x3")
-statement = JoinStatement(x1_x1, x1_x3, "or")
+x1_x1 = sh.JoinStatement("x1")
+x1_x3 = sh.JoinStatement("x1", "x3")
+statement = sh.JoinStatement(x1_x1, x1_x3, "or")
 joined = sh.join(dataframe_1, dataframe_2, statement)
 joined.toPandas()
 ```
@@ -408,7 +437,19 @@ joined.toPandas()
 
 
 <div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
 
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
 <table border="1" class="dataframe">
   <thead>
     <tr style="text-align: right;">
@@ -436,7 +477,7 @@ joined.toPandas()
     <tr>
       <th>1</th>
       <td>B</td>
-      <td>I</td>
+      <td>J</td>
       <td>357</td>
       <td>202</td>
       <td>525.0</td>
@@ -456,7 +497,7 @@ joined.toPandas()
     <tr>
       <th>3</th>
       <td>D</td>
-      <td>G</td>
+      <td>J</td>
       <td>530</td>
       <td>703</td>
       <td>112.3</td>
@@ -466,7 +507,7 @@ joined.toPandas()
     <tr>
       <th>4</th>
       <td>E</td>
-      <td>F</td>
+      <td>H</td>
       <td>61</td>
       <td>521</td>
       <td>906.0</td>
@@ -476,7 +517,7 @@ joined.toPandas()
     <tr>
       <th>5</th>
       <td>F</td>
-      <td>E</td>
+      <td>H</td>
       <td>482</td>
       <td>496</td>
       <td>13.0</td>
@@ -486,7 +527,7 @@ joined.toPandas()
     <tr>
       <th>6</th>
       <td>G</td>
-      <td>D</td>
+      <td>A</td>
       <td>350</td>
       <td>279</td>
       <td>941.0</td>
@@ -514,10 +555,10 @@ joined.toPandas()
 
 
 ```python
-x1_x1 = JoinStatement("x1", "x1")
-x1_x2 = JoinStatement("x1", "x3")
-statement = JoinStatement(x1_x1, x1_x2, "or")
-statement_complex = JoinStatement(statement, statement, "and")
+x1_x1 = sh.JoinStatement("x1")
+x1_x2 = sh.JoinStatement("x1", "x3")
+statement = sh.JoinStatement(x1_x1, x1_x2, "or")
+statement_complex = sh.JoinStatement(statement, statement, "and")
 try:
     joined = sh.join(dataframe_1, dataframe_2, statement_complex)
 except NotImplementedError as error:
