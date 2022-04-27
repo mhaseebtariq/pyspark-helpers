@@ -9,9 +9,9 @@ from .join import JoinValidator, JoinStatement
 def join(
         left: DataFrame, right: DataFrame, statement: JoinStatement,
         how: str = "inner", duplicate_keep: Union[str, list] = "left"
-):
+) -> DataFrame:
     """
-    Joins two spark dataframes in a fool-proof manner
+    Joins two Spark dataframes in a foolproof manner
 
     [See JoinValidator and JoinStatement for details]
     """
