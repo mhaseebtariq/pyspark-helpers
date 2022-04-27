@@ -7,7 +7,7 @@ from .join import JoinValidator, JoinStatement
 
 
 def join(
-        left: DataFrame, right: DataFrame, statement: Union[str, list],
+        left: DataFrame, right: DataFrame, statement: JoinStatement,
         how: str = "inner", duplicate_keep: Union[str, list] = "left"
 ):
     """
