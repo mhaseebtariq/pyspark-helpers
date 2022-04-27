@@ -12,7 +12,7 @@ from pyspark import SparkConf
 from pyspark.sql import SparkSession, types as st
 from IPython.display import HTML
 
-import src.spark.helpers as sh
+import spark.helpers as sh
 ```
 
 
@@ -373,14 +373,14 @@ try:
     joined = sh.join(dataframe_1, dataframe_2, sh.JoinStatement("x1"))
 except ValueError as error:
     print(f"Error raised as expected: {error}")
-    joined = sh.join(dataframe_1, dataframe_2, sh.JoinStatement("x1"), when_same_columns="left")
+    joined = sh.join(dataframe_1, dataframe_2, sh.JoinStatement("x1"), overwrite_strategy="left")
 joined.toPandas()
 ```
 
     Error raised as expected: 
     
     Overlapping columns found in the dataframes: ['x1', 'x3', 'x4']
-    Please provide the `when_same_columns` argument therefore, to select a selection strategy:
+    Please provide the `overwrite_strategy` argument therefore, to select a selection strategy:
     	* "left": Use all the intersecting columns from the left dataframe
     	* "right": Use all the intersecting columns from the right dataframe
     	* [["x_in_left", "y_in_left"], ["z_in_right"]]: Provide column names for both
@@ -476,7 +476,7 @@ joined.toPandas()
 
 
 ```python
-joined = sh.join(dataframe_1, dataframe_2, sh.JoinStatement("x1"), when_same_columns="right")
+joined = sh.join(dataframe_1, dataframe_2, sh.JoinStatement("x1"), overwrite_strategy="right")
 joined.toPandas()
 ```
 
@@ -571,7 +571,7 @@ joined.toPandas()
 ```python
 joined = sh.join(
     dataframe_1, dataframe_2, sh.JoinStatement("x1"), 
-    when_same_columns=[["x1", "x3"], ["x4"]]
+    overwrite_strategy=[["x1", "x3"], ["x4"]]
 )
 joined.toPandas()
 ```
@@ -668,7 +668,7 @@ joined.toPandas()
 x1_x1 = sh.JoinStatement("x1")
 x1_x3 = sh.JoinStatement("x1", "x3")
 statement = sh.JoinStatement(x1_x1, x1_x3, "or")
-joined = sh.join(dataframe_1, dataframe_2, statement, when_same_columns="left")
+joined = sh.join(dataframe_1, dataframe_2, statement, overwrite_strategy="left")
 joined.toPandas()
 ```
 
@@ -787,7 +787,7 @@ x1_x2 = sh.JoinStatement("x1", "x3")
 statement = sh.JoinStatement(x1_x1, x1_x2, "or")
 statement_complex = sh.JoinStatement(statement, statement, "and")
 try:
-    joined = sh.join(dataframe_1, dataframe_2, statement_complex, when_same_columns="left")
+    joined = sh.join(dataframe_1, dataframe_2, statement_complex, overwrite_strategy="left")
 except NotImplementedError as error:
     print(f"Error raised as expected: [{error}]")
 ```
