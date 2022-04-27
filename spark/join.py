@@ -37,7 +37,9 @@ class JoinStatement:
         }
     }
 
-    def __init__(self, left: JoinStatementOrString, right: JoinStatementOrString, operation: str = "eq"):
+    def __init__(self, left: JoinStatementOrString, right: JoinStatementOrString = None, operation: str = "eq"):
+        if right is None:
+            right = str(left)
         self_types = [left.__class__ == self.__class__, right.__class__ == self.__class__]
         if any(self_types):
             if not all(self_types):
