@@ -1,4 +1,3 @@
-import operator
 from typing import Union, Generator, MutableMapping
 
 import pyspark.sql.functions as sf
