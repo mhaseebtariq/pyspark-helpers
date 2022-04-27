@@ -218,7 +218,7 @@ class JoinValidator:
                 f"either extra or missing in the subset of the common columns: {common_columns}"
             )
 
-        return left_duplicate_keep, right_duplicate_keep
+        return sorted(set(left_duplicate_keep)), sorted(set(right_duplicate_keep))
 
     @staticmethod
     def _validate_dataframe(dataframe, which):
