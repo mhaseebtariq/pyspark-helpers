@@ -8,21 +8,21 @@ from .join import JoinValidator, JoinStatement
 
 def join(
         left: DataFrame, right: DataFrame, statement: JoinStatement,
-        how: str = "inner", duplicate_keep: Union[str, list] = "left"
+        how: str = "inner", when_same_columns: Union[str, list] = None
 ) -> DataFrame:
     """
     Joins two Spark dataframes in a foolproof manner
 
     [See JoinValidator and JoinStatement for details]
     """
-    params = JoinValidator(left, right, statement, duplicate_keep)
+    params = JoinValidator(left, right, statement, when_same_columns)
 
     left = params.left.alias(JoinStatement.left_alias)
     right = params.right.alias(JoinStatement.right_alias)
     final_columns = (
         # Common columns
-        [f"{JoinStatement.get_left_column(x)}" for x in params.left_duplicate_keep] +
-        [f"{JoinStatement.get_right_column(x)}" for x in params.right_duplicate_keep] +
+        [f"{JoinStatement.get_left_column(x)}" for x in params.left_when_same_columns] +
+        [f"{JoinStatement.get_right_column(x)}" for x in params.right_when_same_columns] +
         # Non-common columns
         [f"{JoinStatement.get_left_column(x)}" for x in set(params.left_columns).difference(params.right_columns)] +
         [f"{JoinStatement.get_right_column(x)}" for x in set(params.right_columns).difference(params.left_columns)]
@@ -31,22 +31,28 @@ def join(
     return left.join(right, on=statement.execute(left, right), how=how).select(*final_columns).select(*selected)
 
 
-def group_iterator(dataframe: DataFrame, group: str) -> Generator[tuple, None, None]:
+def group_iterator(dataframe: DataFrame, group_by: Union[str, list]) -> Generator[tuple, None, None]:
     """
     Iterate over Spark dataframe as you would on a Pandas dataframe
 
     Args:
         dataframe (Spark DataFrame): The Spark dataframe
-        group (str): The column to group by
+        group_by (str_or_list): The column(s) to group by
 
     Returns:
         A generator: [(group_name, group_dataframe), ...]
+
+    NOTE: ALL THE DISTINCT VALUES FOR THE `GROUP` WILL BE LOADED INTO MEMORY!
     """
-    if type(group) is not str:
-        raise NotImplementedError(f"Only single column groups are supported: {group}")
-    groups = [x[0] for x in dataframe.select(group).distinct().sort(group).collect()]
-    for x in groups:
-        yield x, dataframe.filter(sf.col(group) == x)
+    if type(group_by) is str:
+        group_by = [group_by]
+    groups = [list(x) for x in dataframe.select(group_by).distinct().sort(group_by).collect()]
+    for values in groups:
+        filtered = dataframe.alias("new")
+        for column, group in zip(group_by, values):
+            filtered = filtered.filter(sf.col(column) == group)
+        values = values[0] if len(values) == 1 else tuple(values)
+        yield values, filtered
 
 
 def change_schema(dataframe: DataFrame, schema: MutableMapping) -> DataFrame:
