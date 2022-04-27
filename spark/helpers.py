@@ -53,7 +53,7 @@ def change_schema(dataframe: DataFrame, schema: MutableMapping) -> DataFrame:
 
     Args:
         dataframe (Spark Dataframe): The input dataframe
-        schema (dict): Key-value pair for the schema {column_name_1: new_type, column_name_2: ...}
+        schema (MutableMapping): Key-value pair for the schema {column_name_1: new_type, column_name_2: ...}
 
     Returns:
         The dataframe with the new schema
