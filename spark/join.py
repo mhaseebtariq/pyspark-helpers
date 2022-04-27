@@ -142,11 +142,13 @@ class JoinValidator:
         left (Spark DataFrame): The left dataframe
         right (Spark DataFrame): The right dataframe
         statement (JoinStatement): The join statement as a JoinStatement object
-        duplicate_keep (str_or_list): When there are duplicate columns in the 2 dataframes, which columns to keep
+        when_same_columns (str_or_list): The selection strategy to adopt when there are overlapping columns:
+            * "left": Use all the intersecting columns from the left dataframe
+            * "right": Use all the intersecting columns from the right dataframe
+            * [["column_x_in_left", "column_y_in_left"], ["column_z_in_left"]]: Provide column names for both
     """
     def __init__(
-            self, left: DataFrame, right: DataFrame, statement: JoinStatement,
-            duplicate_keep: Union[str, list] = "left"
+            self, left: DataFrame, right: DataFrame, statement: JoinStatement, when_same_columns: Union[str, list]
     ):
         if not isinstance(statement, JoinStatement):
             raise ValueError(f"Argument `statement` ({statement.__class__}) must be an instance of JoinStatement")
@@ -155,8 +157,8 @@ class JoinValidator:
         self.right = self._validate_dataframe(right, "right")
         self.left_columns = [x.name for x in self.left.schema]
         self.right_columns = [x.name for x in self.right.schema]
-        self.left_duplicate_keep, self.right_duplicate_keep = self._validate_duplicate_keep_argument(
-            duplicate_keep, self.left_columns, self.right_columns
+        self.left_when_same_columns, self.right_when_same_columns = self._validate_when_same_columns_argument(
+            when_same_columns, self.left_columns, self.right_columns
         )
 
     @staticmethod
@@ -187,38 +189,51 @@ class JoinValidator:
         return left, right
 
     @classmethod
-    def _validate_duplicate_keep_argument(cls, duplicate_keep, left_columns, right_columns):
+    def _validate_when_same_columns_argument(cls, when_same_columns, left_columns, right_columns):
         error = (
-            f"\nThe argument `duplicate_keep` ({duplicate_keep}) should be either:\n"
+            f"\nThe argument `when_same_columns` ({when_same_columns}) should be either:\n"
             "* A string with value 'left' or 'right'\n"
             "* A list of exactly 2 lists containing only strings: e.g. [['column_w', 'column_x'], ['column_y']]"
         )
         common_columns = sorted(set(left_columns).intersection(right_columns))
-        check_if_left_or_right = cls._check_if_left_or_right(duplicate_keep, error)
+        if common_columns:
+            if not when_same_columns:
+                raise ValueError(
+                    f"\n\nOverlapping columns found in the dataframes: {common_columns}"
+                    "\nPlease provide the `when_same_columns` argument therefore, to select a selection strategy:"
+                    '\n\t* "left": Use all the intersecting columns from the left dataframe'
+                    '\n\t* "right": Use all the intersecting columns from the right dataframe'
+                    '\n\t* [["x_in_left", "y_in_left"], ["z_in_right"]]: Provide column names for both\n'
+                )
+        else:
+            when_same_columns = "left"
+        check_if_left_or_right = cls._check_if_left_or_right(when_same_columns, error)
         if check_if_left_or_right:
             if check_if_left_or_right == "left":
-                left_duplicate_keep = list(common_columns)
-                right_duplicate_keep = []
+                left_when_same_columns = list(common_columns)
+                right_when_same_columns = []
             else:
-                left_duplicate_keep = []
-                right_duplicate_keep = list(common_columns)
+                left_when_same_columns = []
+                right_when_same_columns = list(common_columns)
         else:
-            left_duplicate_keep, right_duplicate_keep = cls._check_if_list_has_two_items(duplicate_keep, error)
+            left_when_same_columns, right_when_same_columns = cls._check_if_list_has_two_items(when_same_columns, error)
 
-        left_duplicate_keep = cls._check_if_list_items_are_strings(left_duplicate_keep, error)
-        right_duplicate_keep = cls._check_if_list_items_are_strings(right_duplicate_keep, error)
-        common_keep = sorted(set(left_duplicate_keep).intersection(right_duplicate_keep))
+        left_when_same_columns = cls._check_if_list_items_are_strings(left_when_same_columns, error)
+        right_when_same_columns = cls._check_if_list_items_are_strings(right_when_same_columns, error)
+        common_keep = sorted(set(left_when_same_columns).intersection(right_when_same_columns))
         if common_keep:
-            raise ValueError(f"Some of the `duplicate_keep` columns defined for both dataframes: {common_keep}")
+            raise ValueError(f"Some of the `when_same_columns` columns defined for both dataframes: {common_keep}")
 
-        missing_or_extra = sorted(set(common_columns).symmetric_difference(left_duplicate_keep + right_duplicate_keep))
+        missing_or_extra = sorted(
+            set(common_columns).symmetric_difference(left_when_same_columns + right_when_same_columns)
+        )
         if missing_or_extra:
             raise ValueError(
-                f"Some of the provided `duplicate_keep` ({duplicate_keep}) columns are "
+                f"Some of the provided `when_same_columns` ({when_same_columns}) columns are "
                 f"either extra or missing in the subset of the common columns: {common_columns}"
             )
 
-        return sorted(set(left_duplicate_keep)), sorted(set(right_duplicate_keep))
+        return sorted(set(left_when_same_columns)), sorted(set(right_when_same_columns))
 
     @staticmethod
     def _validate_dataframe(dataframe, which):
