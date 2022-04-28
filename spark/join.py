@@ -41,7 +41,7 @@ class JoinStatement:
             if isinstance(left, self.__class__):
                 raise ValueError(f"Please provide `right`, when `left` is an instance of {self.__class__.__name__}")
             right = str(left)
-        self_types = [left.__class__ == self.__class__, right.__class__ == self.__class__]
+        self_types = [isinstance(x, self.__class__) for x in [left, right]]
         if any(self_types):
             if not all(self_types):
                 raise ValueError(
