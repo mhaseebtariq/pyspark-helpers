@@ -1,5 +1,4 @@
 import operator
-from copy import deepcopy
 from typing import Union, Optional
 
 
@@ -39,7 +38,9 @@ class JoinStatement:
 
     def __init__(self, left: JoinStatementOrString, right: JoinStatementOrString = None, operation: str = "eq"):
         if right is None:
-            right = deepcopy(left)
+            if isinstance(left, self.__class__):
+                raise ValueError(f"Please provide `right`, when `left` is an instance of {self.__class__.__name__}")
+            right = str(left)
         self_types = [left.__class__ == self.__class__, right.__class__ == self.__class__]
         if any(self_types):
             if not all(self_types):
