@@ -19,7 +19,7 @@ class JoinStatement:
     """
     left_alias = "left"
     right_alias = "right"
-    type_bitwise = "bitwise"
+    type_logical = "logical"
     type_comparison = "comparison"
     operators = {
         type_comparison: {
@@ -30,7 +30,7 @@ class JoinStatement:
             "lt": operator.lt,
             "gt": operator.gt,
         },
-        type_bitwise: {
+        type_logical: {
             "or": operator.or_,
             "and": operator.and_,
         }
@@ -47,7 +47,7 @@ class JoinStatement:
                 raise ValueError(
                     f"Either both `left` and `right` should be of type {self.__class__.__name__}; or neither"
                 )
-            self.operator_type = str(self.type_bitwise)
+            self.operator_type = str(self.type_logical)
         else:
             self.operator_type = str(self.type_comparison)
         self.operator = self._validate_operator(operation, self.operators[self.operator_type], self.operator_type)
@@ -73,8 +73,8 @@ class JoinStatement:
         """
         if self.operator_type == self.type_comparison:
             return self._execute_comparison(left_data, right_data)
-        elif self.operator_type == self.type_bitwise:
-            return self._execute_bitwise(left_data, right_data, recursive)
+        elif self.operator_type == self.type_logical:
+            return self._execute_logical(left_data, right_data, recursive)
         else:
             raise NotImplementedError(f"Operation type `{self.operator_type}` not implemented")
 
@@ -94,7 +94,7 @@ class JoinStatement:
             )
         return self.operator(left_data[self.get_left_column(self.left)], right_data[self.get_right_column(self.right)])
 
-    def _execute_bitwise(self, left_data: DataFrame, right_data: DataFrame, recursive: bool) -> DataFrame:
+    def _execute_logical(self, left_data: DataFrame, right_data: DataFrame, recursive: bool) -> DataFrame:
         """
         [See self.execute(...)]
         """
@@ -121,7 +121,7 @@ class JoinStatement:
         Args:
             operation (str): The name of the operator
             mapping (dict): The mapping for the operators, see `self.operators`
-            type_ (str): The type of the operator | `comparison` or `bitwise`
+            type_ (str): The type of the operator | `comparison` or `logical`
 
         Returns:
             The `operator` object
