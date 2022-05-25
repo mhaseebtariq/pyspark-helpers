@@ -1,7 +1,7 @@
 import operator
 from typing import Union, Optional
 
-
+from pyspark.sql.functions import col
 from pyspark.sql.dataframe import DataFrame
 
 
@@ -92,7 +92,7 @@ class JoinStatement:
             raise ValueError(
                 f"Column {self.right} not found in the `right` dataframe | Available columns = {right_columns}"
             )
-        return self.operator(left_data[self.get_left_column(self.left)], right_data[self.get_right_column(self.right)])
+        return self.operator(col(self.get_left_column(self.left)), col(self.get_right_column(self.right)))
 
     def _execute_logical(self, left_data: DataFrame, right_data: DataFrame, recursive: bool) -> DataFrame:
         """
